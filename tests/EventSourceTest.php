@@ -5,10 +5,10 @@ namespace Clue\Tests\React\EventSource;
 use Clue\React\EventSource\EventSource;
 use PHPUnit\Framework\TestCase;
 use React\Http\Io\ReadableBodyStream;
+use React\Http\Message\Response;
 use React\Promise\Deferred;
 use React\Promise\Promise;
 use React\Stream\ThroughStream;
-use RingCentral\Psr7\Response;
 
 class EventSourceTest extends TestCase
 {
