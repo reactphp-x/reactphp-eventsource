@@ -73,6 +73,17 @@ class EventSource extends EventEmitter
     public $url;
 
     /**
+     * @var string (read-only) method
+     * @readonly
+     */
+    public $method;
+
+    public $data;
+
+    public $headers;
+
+
+    /**
      * @var string last event ID received
      */
     private $lastEventId = '';
@@ -145,12 +156,15 @@ class EventSource extends EventEmitter
      * This value SHOULD NOT be given unless you're sure you want to explicitly use a
      * given event loop instance.
      *
+     * @param string         $method
      * @param string         $url
+     * @param array         $data
+     * @param array        $headers
      * @param ?Browser       $browser
      * @param ?LoopInterface $loop
      * @throws \InvalidArgumentException for invalid URL
      */
-    public function __construct($url, Browser $browser = null, LoopInterface $loop = null)
+    public function __construct($method, $url, $data = [], $headers = [], Browser $browser = null, LoopInterface $loop = null)
     {
         $parts = parse_url($url);
         if (!isset($parts['scheme'], $parts['host']) || !in_array($parts['scheme'], array('http', 'https'))) {
@@ -162,7 +176,10 @@ class EventSource extends EventEmitter
             $browser = new Browser(null, $this->loop);
         }
         $this->browser = $browser->withRejectErrorResponse(false);
+        $this->method = $method;
         $this->url = $url;
+        $this->headers = $headers;
+        $this->data = $data;
 
         $this->readyState = self::CONNECTING;
         $this->request();
@@ -179,31 +196,38 @@ class EventSource extends EventEmitter
         }
 
         $this->request = $this->browser->requestStreaming(
-            'GET',
+            $this->method,
             $this->url,
-            $headers
+            $headers + $this->headers,
+            json_encode($this->data)
         );
         $this->request->then(function (ResponseInterface $response) {
+            $isEventStream = true;;
             if ($response->getStatusCode() !== 200) {
-                $this->readyState = self::CLOSED;
+                // $this->readyState = self::CLOSED;
                 $this->emit('error', array(new \UnexpectedValueException('Unexpected status code')));
-                $this->close();
-                return;
+                // $this->close();
+                // return;
             }
 
             // match `Content-Type: text/event-stream` (case insensitive and ignore additional parameters)
             if (!preg_match('/^text\/event-stream(?:$|;)/i', $response->getHeaderLine('Content-Type'))) {
-                $this->readyState = self::CLOSED;
+                // $this->readyState = self::CLOSED;
                 $this->emit('error', array(new \UnexpectedValueException('Unexpected Content-Type')));
-                $this->close();
-                return;
+                // $this->close();
+                // return;
+                $isEventStream = false;
             }
 
             $stream = $response->getBody();
             assert($stream instanceof ReadableStreamInterface);
 
             $buffer = '';
-            $stream->on('data', function ($chunk) use (&$buffer, $stream) {
+            $stream->on('data', function ($chunk) use (&$buffer, $stream, $isEventStream) {
+                if (!$isEventStream) {
+                    $this->emit('_data', [$chunk]);
+                    return;
+                }
                 $messageEvents = preg_split(
                     '/(?:\r\n|\r(?!\n)|\n){2}/S',
                     $buffer . $chunk
