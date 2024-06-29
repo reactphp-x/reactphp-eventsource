@@ -20,7 +20,7 @@ $es = new Clue\React\EventSource\EventSource('POST',$argv[1], $data = [
     ],
     'stream' => true
 ],  [
-    'Authorization' => 'Bearer sk-CvL4w9WYyHeVntZK1sFDn5k6meOKhnbsrWWcCtMK8SLMRDVL',
+    'Authorization' => 'Bearer xxxx',
     'Content-Type' => 'application/json',
     'Cache-Control' => 'no-cache'
 ]);
