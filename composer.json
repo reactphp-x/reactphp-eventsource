@@ -1,5 +1,5 @@
 {
-    "name": "reactphp-framework/eventsource",
+    "name": "reactphp-x/eventsource",
     "description": "Instant real-time updates. Lightweight EventSource client receiving live messages via HTML5 Server-Sent Events (SSE). Fast stream processing built on top of ReactPHP's event-driven architecture.",
     "keywords": ["EventSource", "Server-Side Events", "SSE", "event-driven", "ReactPHP", "async"],
     "homepage": "https://github.com/clue/reactphp-eventsource",
